@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>net-whois: the counter at the registry</title>
+<style>
+  /* I built this page like the card you get back across a registry
+     counter: one record, ruled and stamped, with the route it
+     traveled written on the back. */
+  :root { --ink:#23201a; --paper:#f5efe0; --card:#fbf7ec;
+          --line:#b8ab8c; --accent:#7a4a21; --dim:#6f6650; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#33302a; color:var(--ink);
+         font-family: Georgia, serif; }
+  .wrap { max-width:900px; margin:0 auto; padding:2rem 1rem 3rem; }
+  header { text-align:center; }
+  header img { max-width:min(880px, 94vw); width:100%; height:auto; }
+  h1 { color:var(--paper); margin:0.8rem 0 0.2rem; font-size:1.9rem; }
+  .sub { color:#cfc7ae; max-width:40rem; margin:0.2rem auto 1.2rem;
+         line-height:1.55; }
+  .card { background:var(--card); border:1px solid var(--line);
+          border-radius:4px; padding:1.6rem 1.8rem; margin-top:1.6rem;
+          box-shadow:0 6px 24px rgba(0,0,0,0.35); }
+  h2 { margin:0 0 0.8rem; font-size:1.25rem; color:var(--accent);
+       border-bottom:2px solid var(--line); padding-bottom:0.3rem; }
+  p, li { line-height:1.6; }
+  .walk { display:grid; gap:0.8rem; grid-template-columns:1fr; }
+  @media (min-width:720px) { .walk { grid-template-columns:repeat(3, 1fr); } }
+  .step { border:1px dashed var(--line); border-radius:4px;
+          padding:0.9rem 1rem; background:#fffdf6; }
+  .step .n { font-family:'Courier New', monospace; color:var(--accent);
+             font-size:1.3rem; display:block; margin-bottom:0.3rem; }
+  .step p { margin:0; font-size:0.95rem; }
+  table { width:100%; border-collapse:collapse;
+          font-family:'Courier New', monospace; font-size:0.92rem; }
+  td, th { padding:0.4rem 0.5rem; border-bottom:1px solid var(--line);
+           text-align:left; }
+  pre { background:#2c2822; color:#e9e2cc; border-radius:4px;
+        padding:0.9rem 1rem; overflow-x:auto;
+        font-family:'Courier New', monospace; font-size:0.87rem;
+        line-height:1.55; }
+  .record { background:#fffdf6; border:1px solid var(--line);
+            font-family:'Courier New', monospace; font-size:0.9rem;
+            padding:1rem 1.1rem; line-height:1.6; white-space:pre-wrap; }
+  img.schematic { width:100%; height:auto; border:1px solid var(--line); }
+  a { color:var(--accent); }
+  footer { text-align:center; color:#a79e85; font-size:0.9rem;
+           padding:1.6rem 1rem 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="assets/banner.png" alt="net-whois banner">
+    <h1>net-whois</h1>
+    <p class="sub">Ask a registry about a domain or an IP address,
+    the way it has worked since 1985: one connection to port 43, one
+    question, and the record in the registry's own words.</p>
+  </header>
+
+  <div class="card">
+    <h2>How a lookup walks</h2>
+    <div class="walk">
+      <div class="step"><span class="n">01</span>
+        <p><strong>You name it.</strong> A domain or an IPv4
+        address, nothing fancier. WHOIS never had a form to fill
+        in.</p></div>
+      <div class="step"><span class="n">02</span>
+        <p><strong>I pick the counter.</strong> A registry I know
+        for common TLDs, or IANA for everything else, whose answer
+        points onward.</p></div>
+      <div class="step"><span class="n">03</span>
+        <p><strong>The record comes back.</strong> Thin registries
+        point at the registrar's server, so I follow once more and
+        bring the full card.</p></div>
+    </div>
+    <p>The chain of servers asked is printed on stderr, so the
+    record itself stays clean. Three servers is the limit of the
+    walk.</p>
+  </div>
+
+  <div class="card">
+    <h2>The routing card, as written in the code</h2>
+    <table>
+      <tr><th>TLD</th><th>First server asked</th></tr>
+      <tr><td>com, net</td><td>whois.verisign-grs.com</td></tr>
+      <tr><td>org</td><td>whois.pir.org</td></tr>
+      <tr><td>info</td><td>whois.identity.digital</td></tr>
+      <tr><td>io</td><td>whois.nic.io</td></tr>
+      <tr><td>uk</td><td>whois.nic.uk</td></tr>
+      <tr><td>de</td><td>whois.denic.de</td></tr>
+      <tr><td>edu</td><td>whois.educause.edu</td></tr>
+      <tr><td>anything else, and IPs</td><td>whois.iana.org, then follow the referral</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>A card from the test counter</h2>
+    <p>The tool's tests run against a fake WHOIS server on loopback,
+    never the live network. This is the full record that server
+    hands back after the thin answer points at it:</p>
+    <div class="record">Domain Name: THIN.EXAMPLE
+Registrant Name: Example Registrant
+Registrant Organization: Example Org
+Name Server: NS1.EXAMPLE</div>
+    <p>And the walk that produced it, exactly as printed:
+    <code>servers asked: 127.0.0.1 -&gt; 127.0.0.1</code>. On the live
+    network the two stops are different hosts; at the test counter
+    they share one desk.</p>
+  </div>
+
+  <div class="card">
+    <h2>Run it</h2>
+    <pre>python3 main.py example.com
+python3 main.py 192.0.2.1 --json
+python3 main.py example.org --no-referral</pre>
+    <p>Python 3, standard library only. A failed connection or an
+    empty answer exits non-zero: nothing retrieved is never
+    reported as success. Full documentation:
+    <a href="https://github.com/ShadowGuard-AI/net-whois">the repository</a>.</p>
+  </div>
+
+  <div class="card">
+    <h2>The apparatus</h2>
+    <img class="schematic" src="assets/schematic.png"
+         alt="Hand-drawn invention schematic of net-whois">
+  </div>
+</div>
+<footer>
+  net-whois is MIT licensed. Copyright (c) Gavin K (@Epsilon0xCell).
+</footer>
+</body>
+</html>
