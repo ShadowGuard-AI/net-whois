@@ -1,14 +1,83 @@
+![Banner](banner.png)
+
 # net-whois
-Performs a WHOIS lookup for a given domain or IP address. - Focused on Basic network operations
+
+I ask the WHOIS registries about a domain or an IP address and
+bring back what they say, in their own words.
+
+WHOIS is an old, plain protocol: open a TCP connection to port 43,
+send the query, read until the server hangs up. No library earns
+its keep doing that, so this tool is standard library sockets and
+nothing else.
+
+## How I pick a server
+
+Choosing who to ask is the only real judgment in the tool.
+
+- For common TLDs (com, net, org, info, io, uk, de, edu) I go
+  straight to the registry that runs them.
+- For anything else, and for IP addresses, I start at IANA
+  (whois.iana.org) and follow its referral, the way the system was
+  designed to be walked.
+- Thin registries answer with a pointer to the registrar's own
+  WHOIS server. I follow that too, up to three servers total,
+  unless you pass `--no-referral`.
+
+The chain of servers I actually asked is printed on stderr, so
+stdout stays the record itself, unedited.
 
 ## Install
-`git clone https://github.com/ShadowStrikeHQ/net-whois`
+
+```bash
+git clone https://github.com/ShadowGuard-AI/net-whois.git
+cd net-whois
+```
+
+Python 3, standard library only. There is nothing to install. (The
+old requirements.txt listed socket and logging as if they were
+downloads; it is gone.)
 
 ## Usage
-`./net-whois [params]`
+
+```bash
+python3 main.py example.com
+```
+
+```bash
+python3 main.py 192.0.2.1 --json
+```
+
+```bash
+python3 main.py example.org --server whois.pir.org --no-referral
+```
 
 ## Parameters
-- `-h`: Show help message and exit.
+
+- `query`: the domain name or IPv4 address to look up.
+- `--server`: ask this WHOIS server first, instead of the one I
+  would pick. This is also how the test suite points the tool at a
+  fake server on loopback.
+- `--port`: the port the servers listen on. Default 43. Referral
+  hops use the same port.
+- `--no-referral`: take the first answer as final.
+- `--timeout`: seconds per connection. Default 10.
+- `--json`: emit the answer as JSON with the server chain
+  included, instead of the raw record.
+
+## Testing
+
+The suite runs against a fake WHOIS server on loopback, never the
+live network: thin answers, registrar referrals, IANA-style refers,
+and empty responses all get exercised, including the failures.
+
+## Exit codes
+
+- `0`: an answer came back and was delivered.
+- `2`: the lookup failed (connection error) or the registry
+  answered with an empty response. Nothing retrieved is never
+  reported as success.
 
 ## License
-Copyright (c) CY83R-3X71NC710N
+
+MIT. See [LICENSE](LICENSE).
+Copyright (c) Gavin K (@Epsilon0xCell).

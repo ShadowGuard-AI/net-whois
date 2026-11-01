@@ -1,3 +1,0 @@
-socket>=1.0.0
-requests>=1.0.0
-logging>=1.0.0
