@@ -55,8 +55,8 @@ python3 main.py example.org --server whois.pir.org --no-referral
 
 - `query`: the domain name or IPv4 address to look up.
 - `--server`: ask this WHOIS server first, instead of the one I
-  would pick. This is also how the test suite points the tool at a
-  fake server on loopback.
+  would pick. This is also how a loopback test points the tool at a
+  fake server.
 - `--port`: the port the servers listen on. Default 43. Referral
   hops use the same port.
 - `--no-referral`: take the first answer as final.
@@ -64,11 +64,17 @@ python3 main.py example.org --server whois.pir.org --no-referral
 - `--json`: emit the answer as JSON with the server chain
   included, instead of the raw record.
 
-## Testing
+## Verified in this wave
 
-The suite runs against a fake WHOIS server on loopback, never the
-live network: thin answers, registrar referrals, IANA-style refers,
-and empty responses all get exercised, including the failures.
+No test suite ships in this repo, so the old Testing section
+claiming one has been replaced with what was actually run here:
+against a fake WHOIS server on loopback, a raw lookup returned
+the record with exit 0 and "servers asked: 127.0.0.1" on stderr,
+the `--json` form returned the query, server chain, and response,
+and a refused connection printed an error and exited 2. No live
+registry was contacted in this wave. Thin answers, registrar
+referrals, and empty responses are not claimed as tested here,
+because no suite for them is in the repo.
 
 ## Exit codes
 
